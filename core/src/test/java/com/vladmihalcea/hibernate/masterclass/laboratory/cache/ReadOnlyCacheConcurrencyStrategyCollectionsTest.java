@@ -1,12 +1,14 @@
 package com.vladmihalcea.hibernate.masterclass.laboratory.cache;
 
 import com.vladmihalcea.hibernate.masterclass.laboratory.util.AbstractTest;
+
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.annotations.Immutable;
 import org.junit.Before;
 import org.junit.Test;
 
 import javax.persistence.*;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -34,6 +36,7 @@ public class ReadOnlyCacheConcurrencyStrategyCollectionsTest extends AbstractTes
         Properties properties = super.getProperties();
         properties.put("hibernate.cache.use_second_level_cache", Boolean.TRUE.toString());
         properties.put("hibernate.cache.region.factory_class", "org.hibernate.cache.ehcache.EhCacheRegionFactory");
+        properties.put("hibernate.cache.use_structured_entries", Boolean.TRUE.toString());
         return properties;
     }
 
@@ -68,12 +71,17 @@ public class ReadOnlyCacheConcurrencyStrategyCollectionsTest extends AbstractTes
                     session.get(Commit.class, 1L);
             assertEquals(2, commit.getChanges().size());
         });
+        
+        printEntityCacheStats(Commit.class.getName(), true);
+        
         doInTransaction(session -> {
             LOGGER.info("Load Commit from cache");
             Commit commit = (Commit)
                     session.get(Commit.class, 1L);
             assertEquals(2, commit.getChanges().size());
         });
+
+        printEntityCacheStats(Commit.class.getName(), true);
     }
 
     /**

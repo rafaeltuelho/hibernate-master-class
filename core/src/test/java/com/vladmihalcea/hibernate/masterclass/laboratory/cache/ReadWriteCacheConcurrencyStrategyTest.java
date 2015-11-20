@@ -1,12 +1,14 @@
 package com.vladmihalcea.hibernate.masterclass.laboratory.cache;
 
 import com.vladmihalcea.hibernate.masterclass.laboratory.util.AbstractTest;
+
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.annotations.Immutable;
 import org.junit.Before;
 import org.junit.Test;
 
 import javax.persistence.*;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -36,6 +38,8 @@ public class ReadWriteCacheConcurrencyStrategyTest extends AbstractTest {
         Properties properties = super.getProperties();
         properties.put("hibernate.cache.use_second_level_cache", Boolean.TRUE.toString());
         properties.put("hibernate.cache.region.factory_class", "org.hibernate.cache.ehcache.EhCacheRegionFactory");
+        properties.put("hibernate.cache.use_structured_entries", Boolean.TRUE.toString());
+
         return properties;
     }
 
@@ -65,18 +69,28 @@ public class ReadWriteCacheConcurrencyStrategyTest extends AbstractTest {
         LOGGER.info("Read-write entities are write-through on updating");
         doInTransaction(session -> {
             Repository repository = (Repository) session.get(Repository.class, repositoryReference.getId());
-            repository.setName("High-Performance Hibernate");
+            repository.setName("High-Performance Hibernate - UPDATED");
             for(Commit commit : repository.commits) {
                 for(Change change : commit.changes) {
                     assertNotNull(change.getDiff());
                 }
             }
         });
+        
+        printEntityCacheStats(Repository.class.getName());
+        printEntityCacheStats(Commit.class.getName());
+        printEntityCacheStats(Change.class.getName());
+        
         doInTransaction(session -> {
             LOGGER.info("Reload entity after updating");
             Repository repository = (Repository) session.get(Repository.class, repositoryReference.getId());
             assertEquals("High-Performance Hibernate", repository.getName());
         });
+
+        printEntityCacheStats(Repository.class.getName());
+        printEntityCacheStats(Commit.class.getName());
+        printEntityCacheStats(Change.class.getName());
+    
     }
 
     @Test
@@ -86,9 +100,22 @@ public class ReadWriteCacheConcurrencyStrategyTest extends AbstractTest {
             Repository repository = (Repository) session.get(Repository.class, repositoryReference.getId());
             session.delete(repository);
         });
+
+        printEntityCacheStats(Repository.class.getName(), true);
+        printEntityCacheStats(Commit.class.getName());
+        printEntityCacheStats(Change.class.getName());
+        
         doInTransaction(session -> {
+        	System.out.println("\t get1: " + session.get(Repository.class, repositoryReference.getId()));
+        	System.out.println("\t get2: " + session.get(Repository.class, repositoryReference.getId()));
+        	System.out.println("\t get3: " + session.get(Repository.class, repositoryReference.getId()));
+        	System.out.println("\t get4: " + session.get(Repository.class, repositoryReference.getId()));
             assertNull(session.get(Repository.class, repositoryReference.getId()));
         });
+        
+        printEntityCacheStats(Repository.class.getName(), true);
+        printEntityCacheStats(Commit.class.getName());
+        printEntityCacheStats(Change.class.getName());
     }
 
     /**

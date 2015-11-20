@@ -877,10 +877,11 @@ public abstract class AbstractTest {
     protected void printEntityCacheStats(String region, boolean printEntries) {
 		SecondLevelCacheStatistics stats = getCacheStats(region);
 		LOGGER.info(region + " Stats:  \n\n\t" + stats + "\n");
+		
 		if (printEntries) {
 			@SuppressWarnings("rawtypes")
 			Map cacheEntries = stats.getEntries();
-			LOGGER.info(Arrays.toString(cacheEntries.entrySet().toArray()));
+			LOGGER.info("\n\n\t Cache raw entry data: " + Arrays.toString(cacheEntries.entrySet().toArray()) + "\n");
 		}
 	}
 	

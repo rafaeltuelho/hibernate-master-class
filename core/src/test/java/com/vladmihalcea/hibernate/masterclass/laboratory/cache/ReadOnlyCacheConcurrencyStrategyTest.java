@@ -33,7 +33,14 @@ public class ReadOnlyCacheConcurrencyStrategyTest extends AbstractTest {
     protected Properties getProperties() {
         Properties properties = super.getProperties();
         properties.put("hibernate.cache.use_second_level_cache", Boolean.TRUE.toString());
+        //EHCache
         properties.put("hibernate.cache.region.factory_class", "org.hibernate.cache.ehcache.EhCacheRegionFactory");
+        // Infinispan Cache provider
+        //properties.put("hibernate.cache.region.factory_class", "org.hibernate.cache.infinispan.InfinispanRegionFactory");
+        //properties.put("hibernate.transaction.factory_class", "org.hibernate.transaction.JTATransactionFactory");
+        //properties.put("hibernate.transaction.jta.platform", "org.hibernate.service.jta.platform.internal.JBossStandAloneJtaPlatform");
+        //properties.put("hibernate.transaction.manager_lookup_class", "org.hibernate.cache.infinispan.tm.HibernateTransactionManagerLookup");
+        //properties.put("hibernate.cache.infinispan.statistics", Boolean.TRUE.toString());
         properties.put("hibernate.cache.use_structured_entries", Boolean.TRUE.toString());
         
         return properties;
@@ -114,10 +121,13 @@ public class ReadOnlyCacheConcurrencyStrategyTest extends AbstractTest {
     public void testReadOnlyEntityUpdate() {
         try {
             LOGGER.info("Read-only cache entries cannot be updated");
+            
+            printEntityCacheStats(Repository.class.getName(), true);
+
             doInTransaction(session -> {
                 Repository repository = (Repository) session.get(Repository.class, 1L);
 
-                printEntityCacheStats(Repository.class.getName());
+                printEntityCacheStats(Repository.class.getName(), true);
                 
                 repository.setName("High-Performance Hibernate");
             });
@@ -207,6 +217,8 @@ public class ReadOnlyCacheConcurrencyStrategyTest extends AbstractTest {
                 name="commit_change",
                 joinColumns=@JoinColumn(name="commit_id")
         )
+        @org.hibernate.annotations.Cache(
+        	    usage = CacheConcurrencyStrategy.READ_ONLY)
         private List<Change> changes = new ArrayList<>();
 
         public Commit() {

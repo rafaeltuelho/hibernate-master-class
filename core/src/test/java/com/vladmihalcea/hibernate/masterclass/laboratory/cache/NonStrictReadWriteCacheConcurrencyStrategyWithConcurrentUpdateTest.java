@@ -46,12 +46,16 @@ public class NonStrictReadWriteCacheConcurrencyStrategyWithConcurrentUpdateTest 
                 LOGGER.info("Fetch Repository from another transaction");
                 assertFalse(getSessionFactory().getCache()
                     .containsEntity(Repository.class, 1L));
+                
+                printEntityCacheStats(Repository.class.getName(), true);
+                
                 executeSync(() -> {
                     Session _session = getSessionFactory().openSession();
-                    Repository repository = (Repository)
-                        _session.get(Repository.class, 1L);
-                    LOGGER.info("Cached Repository from Bob's transaction {}",
-                        repository);
+                    Repository repository = (Repository)_session.get(Repository.class, 1L);
+                    LOGGER.info("Cached Repository from Bob's transaction {}", repository);
+                    
+                    printEntityCacheStats(Repository.class.getName(), true);
+                    
                     _session.close();
                     endLatch.countDown();
                 });
@@ -91,12 +95,18 @@ public class NonStrictReadWriteCacheConcurrencyStrategyWithConcurrentUpdateTest 
                 session.get(Repository.class, 1L);
             assertTrue(getSessionFactory().getCache()
                 .containsEntity(Repository.class, 1L));
-            repository.setName("High-Performance Hibernate");
+            repository.setName("High-Performance Hibernate - ### TUELHO ###");
+
+            printEntityCacheStats(Repository.class.getName(), true);
+            
             applyInterceptor.set(true);
         });
+        
         endLatch.await();
+        
         assertFalse(getSessionFactory().getCache()
             .containsEntity(Repository.class, 1L));
+        
         doInTransaction(session -> {
             applyInterceptor.set(false);
             Repository repository = (Repository)
